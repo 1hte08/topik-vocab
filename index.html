@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>韓文單字本</title>
+<title>單字測驗區</title>
 <style>
 :root{--bg:#f6f5f1;--fg:#1f2328;--card:#fff;--muted:#6b7280;--accent:#2f6fed;--ok:#1a8f4c;--bad:#d23b3b;--bd:#e3e1d9;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--fg:#e8e8e6;--card:#1f2226;--muted:#9aa0a6;--accent:#6b9bff;--ok:#4cc27f;--bad:#ff7a7a;--bd:#33373d;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#15171a;--fg:#e8e8e6;--card:#1f2226;--muted:#9aa0a6;--accent:#6b9bff;--ok:#4cc27f;--bad:#ff7a7a;--bd:#33373d;color-scheme:dark}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei","Apple SD Gothic Neo","Malgun Gothic","Hiragino Sans",sans-serif}
 main{max-width:720px;margin:0 auto;padding:16px}
-h1{font-size:20px;margin:4px 0 12px}
-.tabs{display:flex;gap:8px;margin-bottom:14px}
-.tabs button{flex:1}
+.head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+h1{font-size:20px;margin:4px 0}
+.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button{flex:1}
 button,select,input,textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 12px}
 button{cursor:pointer}
 button.p{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -22,10 +22,13 @@ button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 button.sm{padding:4px 9px;font-size:13px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:14px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
-.row>*{flex:1;min-width:110px}
-.row>button{flex:0 0 auto}
+.row>*{flex:1;min-width:110px}.row>button{flex:0 0 auto}
 label{font-size:13px;color:var(--muted)}
 textarea{width:100%;min-height:90px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.chip{display:flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px;color:var(--fg)}
+.chip input{width:auto;padding:0;margin:0}
+.chip.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .big{font-size:34px;text-align:center;margin:14px 0 4px;font-weight:600}
 .hint{text-align:center;color:var(--muted);font-size:14px;margin-bottom:10px}
 .ans input{width:100%;margin-bottom:8px;font-size:18px}
@@ -45,16 +48,15 @@ th{color:var(--muted);font-weight:500;font-size:13px}
 </head>
 <body>
 <main>
-<h1>📖 韓文單字本</h1>
+<div class="head"><h1>📖 單字測驗區</h1><select id="lang" aria-label="語言"></select></div>
 <div class="tabs"><button id="t1" class="on">做答區</button><button id="t2">單字題庫區</button></div>
 
 <section id="quiz">
   <div class="card" id="setup">
-    <div class="row">
-      <div><label>單字庫</label><br><select id="qdeck" style="width:100%"></select></div>
-      <div><label>模式</label><br><select id="qmode" style="width:100%"><option value="ko">看韓文 → 打中文</option><option value="zh">看中文 → 打韓文</option></select></div>
-    </div>
-    <div class="row"><button class="p" id="start">開始作答</button><button id="again" class="hide">只練錯題</button></div>
+    <label>單字庫（可複選）</label>
+    <div class="chips" id="chips"></div>
+    <div class="row"><div><label>模式</label><br><select id="qmode" style="width:100%"></select></div></div>
+    <div class="row"><button class="p" id="start">開始作答</button></div>
     <div class="msg" id="qmsg"></div>
   </div>
   <div class="card hide" id="play">
@@ -72,73 +74,108 @@ th{color:var(--muted);font-weight:500;font-size:13px}
     <div class="msg" id="rq-q"></div>
     <div class="row"><button class="p" id="rq">針對錯題補測驗</button><button id="rb">返回</button></div>
   </div>
-  <div class="card" id="histc"><b>近 5 次測驗紀錄</b><div id="hist" class="list" style="margin-top:6px"></div></div>
+  <div class="card"><b>近 5 次測驗紀錄</b><div id="hist" class="list" style="margin-top:6px"></div></div>
 </section>
 
 <section id="lib" class="hide">
   <div class="card">
+    <b>設定</b>
+    <div class="row" style="margin-top:8px"><input id="nl" placeholder="新增語言（例如 英文、日文）" list="presets"><button id="addl">新增語言</button></div>
+    <datalist id="presets"><option value="韓文"><option value="英文"><option value="日文"><option value="法文"><option value="德文"><option value="西班牙文"></datalist>
+    <div class="row"><div><label>分組方式</label><br><select id="unit" style="width:100%"><option value="day">每日一組</option><option value="week">每週一組</option><option value="month">每月一組</option></select></div>
+    <div><label>每組單字數</label><br><input id="size" type="number" min="1" style="width:100%"></div></div>
+    <div class="msg">語言和分組方式可隨時調整，已存的單字不會被刪除。</div>
+  </div>
+  <div class="card">
     <b>新增單字</b>
     <div class="row" style="margin-top:8px">
-      <input id="aK" placeholder="韓文">
-      <input id="aZ" placeholder="中文意思">
-      <select id="aD"></select>
-      <button class="p" id="add">新增</button>
+      <input id="aK"><input id="aZ" placeholder="中文意思"><select id="aD"></select><button class="p" id="add">新增</button>
     </div>
     <div class="msg" id="addmsg"></div>
   </div>
   <div class="card">
-    <b>從 Google 試算表匯入</b>
-    <div class="msg">試算表排成三欄：韓文、中文、Day（Day 可省略）。選取儲存格複製後貼在下方，或匯出為 CSV 後上傳。</div>
-    <textarea id="paste" placeholder="안녕하세요&#9;你好&#9;1"></textarea>
+    <b>大批量匯入</b>
+    <div class="msg" id="ihint"></div>
+    <textarea id="paste"></textarea>
     <div class="row"><select id="iD"></select><button class="p" id="imp">匯入貼上內容</button><input type="file" id="file" accept=".csv,.tsv,.txt"></div>
-    <div class="msg" id="impmsg">未填 Day 的單字會放進上面選的那一天。</div>
+    <div class="msg" id="impmsg">未填編號的單字會放進上面選的那一組。</div>
   </div>
   <div class="card">
-    <div class="row"><select id="ldeck"></select><input id="q" placeholder="搜尋"><button class="sm" id="delday">刪除這一天</button></div>
+    <div class="row"><select id="ldeck"></select><input id="q" placeholder="搜尋"><button class="sm" id="delday">刪除這一組</button></div>
     <div class="msg" id="cnt"></div>
-    <div class="list"><table><thead><tr><th>韓文</th><th>中文</th><th>Day</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="list"><table><thead><tr><th id="th1"></th><th>中文</th><th>組別</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
   </div>
   <div class="card">
     <b>備份</b>
     <div class="msg">資料存在這個瀏覽器裡，換裝置或清除資料前請先匯出備份。</div>
     <div class="row"><button id="exp">匯出備份</button><input type="file" id="bf" accept=".json"></div>
+    <div class="msg" id="bmsg"></div>
   </div>
 </section>
 </main>
 <script>
-const $=s=>document.querySelector(s),KEY='kvocab.v1';
+const $=s=>document.querySelector(s),KEY='kvocab.v1',SK='kvocab.set.v1',HK='kvocab.hist.v1';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let words=[];
-try{words=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(words))}catch(e){}};
-const days=()=>[...new Set(words.map(w=>w.day))].sort((a,b)=>a-b);
-const cntDay=d=>words.filter(w=>w.day===d).length;
+const ld=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let words=ld(KEY,[]),hist=ld(HK,[]),S=Object.assign({lang:'韓文',langs:['韓文'],unit:'day',size:30},ld(SK,{}));
+words.forEach(w=>{w.lang=w.lang||'韓文'});
+[...new Set(words.map(w=>w.lang))].forEach(l=>{if(!S.langs.includes(l))S.langs.push(l)});
+if(!S.langs.includes(S.lang))S.langs.push(S.lang);
+const save=()=>sv(KEY,words),saveS=()=>sv(SK,S);
+const U={day:'Day',week:'Week',month:'Month'};
+const gl=n=>`${U[S.unit]} ${n}`;
+const LW=()=>words.filter(w=>w.lang===S.lang);
+const grp=()=>[...new Set(LW().map(w=>w.day))].sort((a,b)=>a-b);
+const cnt=d=>LW().filter(w=>w.day===d).length;
+let sel=new Set(),known=new Set(),Q=null,last={sel:[],mode:'ko',wrong:[]};
 
-function fillDecks(){
-  const ds=days(),allOpt=`<option value="all">彙總（全部 ${words.length} 字）</option>`,
-  dOpts=ds.map(d=>`<option value="${d}">Day ${d}（${cntDay(d)} 字）</option>`).join('');
-  [['#qdeck',1],['#ldeck',1]].forEach(([s])=>{const e=$(s),v=e.value;e.innerHTML=allOpt+dOpts;if([...e.options].some(o=>o.value===v))e.value=v});
-  const last=ds.length?ds[ds.length-1]:1,next=(ds.length&&cntDay(last)>=30)?last+1:last;
-  const set=new Set([...ds,next,(ds.length?last:0)+1]);
-  const addOpts=[...set].sort((a,b)=>a-b).map(d=>`<option value="${d}">Day ${d}${ds.includes(d)?`（${cntDay(d)}/30）`:'（新）'}</option>`).join('');
-  ['#aD','#iD'].forEach(s=>{const e=$(s),v=e.value;e.innerHTML=addOpts;e.value=[...e.options].some(o=>o.value===v)?v:next});
+function fillAll(){
+  $('#lang').innerHTML=S.langs.map(l=>`<option${l===S.lang?' selected':''}>${esc(l)}</option>`).join('');
+  $('#unit').value=S.unit;$('#size').value=S.size;
+  const m=$('#qmode').value||'ko';
+  $('#qmode').innerHTML=`<option value="ko">看${esc(S.lang)} → 打中文</option><option value="zh">看中文 → 打${esc(S.lang)}</option>`;$('#qmode').value=m;
+  $('#th1').textContent=S.lang;$('#aK').placeholder=S.lang;
+  $('#ihint').textContent=`表格排成三欄：${S.lang}、中文、${U[S.unit]} 編號（編號可省略）。選取儲存格複製後貼在下方，或匯出成 CSV 後上傳。`;
+  $('#paste').placeholder=`${S.lang}\t中文\t1`;
+  const ds=grp(),dv=$('#ldeck').value;
+  $('#ldeck').innerHTML=`<option value="all">彙總（全部 ${LW().length} 字）</option>`+ds.map(d=>`<option value="${d}">${gl(d)}（${cnt(d)}）</option>`).join('');
+  if([...$('#ldeck').options].some(o=>o.value===dv))$('#ldeck').value=dv;
+  const lt=ds.length?ds[ds.length-1]:1,next=(ds.length&&cnt(lt)>=S.size)?lt+1:lt;
+  const opts=[...new Set([...ds,next,(ds.length?lt:0)+1])].sort((a,b)=>a-b).map(d=>`<option value="${d}">${gl(d)}${ds.includes(d)?`（${cnt(d)}/${S.size}）`:'（新）'}</option>`).join('');
+  ['#aD','#iD'].forEach(s=>{const e=$(s),v=e.value;e.innerHTML=opts;e.value=[...e.options].some(o=>o.value===v)?v:next});
+  chips();renderList();
 }
-function render(){fillDecks();renderList()}
+function chips(){
+  const ds=grp();
+  ds.forEach(d=>{if(!known.has(d)){known.add(d);sel.add(d)}});
+  [...sel].forEach(d=>{if(!ds.includes(d))sel.delete(d)});
+  const all=ds.length>0&&sel.size===ds.length;
+  $('#chips').innerHTML=ds.length?`<label class="chip${all?' on':''}"><input type="checkbox" id="call"${all?' checked':''}>彙總（全部 ${LW().length} 字）</label>`+ds.map(d=>{const on=sel.has(d);return `<label class="chip${on?' on':''}"><input type="checkbox" value="${d}"${on?' checked':''}>${gl(d)}（${cnt(d)}）</label>`}).join(''):'<div class="msg">還沒有單字，請先到「單字題庫區」新增或匯入。</div>';
+}
+$('#chips').onchange=e=>{const t=e.target;if(t.id==='call'){sel=t.checked?new Set(grp()):new Set()}else{t.checked?sel.add(+t.value):sel.delete(+t.value)}chips()};
+function renderHist(){$('#hist').innerHTML=hist.length?'<table><tbody>'+hist.map(h=>`<tr><td>${new Date(h.t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td><td>${esc(h.lang)}・${esc(h.deck)}${h.rt?'・補測':''}</td><td>${h.mode==='ko'?'看外語':'看中文'}</td><td>${h.sc}/${h.n}</td></tr>`).join('')+'</tbody></table>':'<div class="msg">還沒有紀錄</div>'}
+
+/* settings */
+$('#lang').onchange=e=>{S.lang=e.target.value;saveS();sel.clear();known.clear();fillAll()};
+$('#addl').onclick=()=>{const l=$('#nl').value.trim();if(!l)return;if(!S.langs.includes(l))S.langs.push(l);S.lang=l;saveS();$('#nl').value='';sel.clear();known.clear();fillAll()};
+$('#unit').onchange=e=>{S.unit=e.target.value;saveS();fillAll()};
+$('#size').onchange=e=>{S.size=Math.max(1,parseInt(e.target.value)||30);saveS();fillAll()};
 
 /* tabs */
 $('#t1').onclick=()=>tab(1);$('#t2').onclick=()=>tab(2);
-function tab(n){$('#quiz').classList.toggle('hide',n!==1);$('#lib').classList.toggle('hide',n!==2);$('#t1').classList.toggle('on',n===1);$('#t2').classList.toggle('on',n===2);if(n===1)fillDecks()}
+function tab(n){$('#quiz').classList.toggle('hide',n!==1);$('#lib').classList.toggle('hide',n!==2);$('#t1').classList.toggle('on',n===1);$('#t2').classList.toggle('on',n===2);fillAll()}
 
 /* library */
-function add(ko,zh,day){
-  ko=ko.trim();zh=zh.trim();if(!ko||!zh)return false;
-  if(words.some(w=>w.ko===ko&&w.zh===zh&&w.day===day))return false;
-  words.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ko,zh,day});return true;
+function add(ko,zh,day,lang){
+  ko=ko.trim();zh=zh.trim();lang=lang||S.lang;if(!ko||!zh)return false;
+  if(words.some(w=>w.ko===ko&&w.zh===zh&&w.day===day&&w.lang===lang))return false;
+  words.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ko,zh,day,lang});return true;
 }
 $('#add').onclick=()=>{
   const ok=add($('#aK').value,$('#aZ').value,+$('#aD').value);
-  $('#addmsg').textContent=ok?'已新增':'請填寫韓文與中文（或這筆已存在）';
-  if(ok){$('#aK').value='';$('#aZ').value='';save();render();$('#aK').focus()}
+  $('#addmsg').textContent=ok?'已新增':'請填寫外語與中文（或這筆已存在）';
+  if(ok){$('#aK').value='';$('#aZ').value='';save();fillAll();$('#aK').focus()}
 };
 $('#aZ').addEventListener('keydown',e=>{if(e.key==='Enter')$('#add').click()});
 function parseText(t){
@@ -146,56 +183,55 @@ function parseText(t){
   t.split(/\r?\n/).forEach((ln,i)=>{
     if(!ln.trim())return;
     const c=(ln.includes('\t')?ln.split('\t'):ln.split(',')).map(x=>x.trim().replace(/^"|"$/g,''));
-    if(i===0&&/韓文|korean/i.test(c[0]))return;
+    if(i===0&&/中文|意思|meaning/i.test(c[1]||''))return;
     const m=(c[2]||'').match(/\d+/),d=m?+m[0]:def;
     if(add(c[0]||'',c[1]||'',d))n++;else skip++;
   });
-  save();render();
+  save();fillAll();
   $('#impmsg').textContent=`匯入 ${n} 筆，略過 ${skip} 筆（空白或重複）`;
 }
 $('#imp').onclick=()=>{parseText($('#paste').value);$('#paste').value=''};
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>parseText(String(r.result));r.readAsText(f,'utf-8');e.target.value=''};
 function renderList(){
   const d=$('#ldeck').value||'all',q=$('#q').value.trim().toLowerCase();
-  let l=d==='all'?words:words.filter(w=>w.day===+d);
+  let l=d==='all'?LW():LW().filter(w=>w.day===+d);
   if(q)l=l.filter(w=>w.ko.toLowerCase().includes(q)||w.zh.toLowerCase().includes(q));
   $('#cnt').textContent=`共 ${l.length} 字`;
   $('#delday').classList.toggle('hide',d==='all');
   $('#tb').innerHTML=l.slice().sort((a,b)=>a.day-b.day).map(w=>`<tr><td>${esc(w.ko)}</td><td>${esc(w.zh)}</td><td>${w.day}</td><td><button class="sm" data-id="${w.id}">刪</button></td></tr>`).join('');
 }
-$('#ldeck').onchange=renderList;$('#q').oninput=renderList;
-$('#tb').onclick=e=>{const id=e.target.dataset.id;if(!id)return;words=words.filter(w=>w.id!==id);save();render()};
-$('#delday').onclick=()=>{const d=+$('#ldeck').value;if(confirm(`確定刪除 Day ${d} 的全部單字？`)){words=words.filter(w=>w.day!==d);save();$('#ldeck').value='all';render()}};
-$('#exp').onclick=()=>{const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(words));a.download='korean-vocab.json';a.click()};
-$('#bf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const a=JSON.parse(r.result);if(Array.isArray(a)){let n=0;a.forEach(w=>{if(add(w.ko||'',w.zh||'',+w.day||1))n++});save();render();alert(`還原 ${n} 筆`)}}catch(x){alert('檔案格式錯誤')}};r.readAsText(f);e.target.value=''};
+let pd=false;const rd=()=>{pd=false;$('#delday').textContent='刪除這一組'};
+$('#ldeck').onchange=()=>{rd();renderList()};$('#q').oninput=renderList;
+$('#tb').onclick=e=>{const id=e.target.dataset.id;if(!id)return;words=words.filter(w=>w.id!==id);save();fillAll()};
+$('#delday').onclick=()=>{const d=+$('#ldeck').value;if(!pd){pd=true;$('#delday').textContent='再按一次確認刪除';return}words=words.filter(w=>!(w.lang===S.lang&&w.day===d));save();rd();$('#ldeck').value='all';fillAll()};
+$('#exp').onclick=()=>{const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(words));a.download='vocab-backup.json';a.click()};
+$('#bf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const a=JSON.parse(r.result);let n=0;a.forEach(w=>{const l=w.lang||'韓文';if(!S.langs.includes(l))S.langs.push(l);if(add(w.ko||'',w.zh||'',+w.day||1,l))n++});save();saveS();fillAll();$('#bmsg').textContent=`還原 ${n} 筆`}catch(x){$('#bmsg').textContent='檔案格式錯誤'}};r.readAsText(f);e.target.value=''};
 
 /* quiz */
 const norm=s=>s.normalize('NFC').trim().toLowerCase().replace(/\s+/g,'');
 const variants=s=>[s,...s.split(/[、，,；;\/]/)].map(norm).filter(Boolean);
-let Q=null,lastWrong=[];
-const HK='kvocab.hist.v1';let hist=[];
-try{hist=JSON.parse(localStorage.getItem(HK)||'[]')}catch(e){}
-function renderHist(){$('#hist').innerHTML=hist.length?'<table><tbody>'+hist.map(h=>`<tr><td>${new Date(h.t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td><td>${esc(h.deck)}${h.rt?'・補測':''}</td><td>${h.mode==='ko'?'韓→中':'中→韓'}</td><td>${h.sc}/${h.n}</td></tr>`).join('')+'</tbody></table>':'<div class="msg">還沒有紀錄</div>'}
-function groups(list,mode){
+function gset(list,mode){
   const g=new Map(),pk=mode==='ko'?'ko':'zh',ak=mode==='ko'?'zh':'ko';
   list.forEach(w=>{const p=w[pk];if(!g.has(p))g.set(p,[]);const a=g.get(p);if(!a.includes(w[ak]))a.push(w[ak])});
   return g;
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function start(only){
-  const d=$('#qdeck').value,mode=$('#qmode').value,list=d==='all'?words:words.filter(w=>w.day===+d);
-  const g=groups(list,mode);let keys=[...g.keys()];
-  if(only)keys=keys.filter(k=>lastWrong.includes(k));
+  const c=only?last:{sel:[...sel],mode:$('#qmode').value,wrong:[]};
+  if(!c.sel.length){$('#qmsg').textContent='請至少勾選一個單字庫';return}
+  const g=gset(LW().filter(w=>c.sel.includes(w.day)),c.mode);let keys=[...g.keys()];
+  if(only)keys=keys.filter(k=>c.wrong.includes(k));
   if(!keys.length){$('#qmsg').textContent='這個單字庫還沒有單字';return}
-  Q={g,mode,keys:shuffle(keys),i:0,score:0,wrong:[],done:false,retest:!!only};
+  const label=c.sel.length===grp().length?'彙總':[...c.sel].sort((a,b)=>a-b).map(gl).join('、');
+  Q={g,mode:c.mode,sel:c.sel,label,lang:S.lang,keys:shuffle(keys),i:0,score:0,wrong:[],done:false,retest:!!only};
   $('#qmsg').textContent='';$('#setup').classList.add('hide');$('#play').classList.remove('hide');show();
 }
 function show(){
   if(Q.i>=Q.keys.length)return finish();
   const k=Q.keys[Q.i],ans=Q.g.get(k);Q.done=false;
   $('#qt').textContent=k;
-  $('#qh').textContent=ans.length>1?`這個意思有 ${ans.length} 個答案，請全部寫出（順序不拘）`:(Q.mode==='ko'?'請輸入中文意思':'請輸入韓文');
-  $('#ai').innerHTML=ans.map(()=>`<input autocomplete="off" autocapitalize="off" lang="${Q.mode==='ko'?'zh-Hant':'ko'}">`).join('');
+  $('#qh').textContent=ans.length>1?`這個意思有 ${ans.length} 個答案，請全部寫出（順序不拘）`:(Q.mode==='ko'?'請輸入中文意思':`請輸入${Q.lang}`);
+  $('#ai').innerHTML=ans.map(()=>'<input autocomplete="off" autocapitalize="off">').join('');
   $('#fb').innerHTML='';$('#ok').textContent='送出';
   $('#pb').style.width=(Q.i/Q.keys.length*100)+'%';
   $('#pn').textContent=`${Q.i+1} / ${Q.keys.length}`;$('#ps').textContent=`答對 ${Q.score}`;
@@ -212,10 +248,9 @@ function submit(){
   $('#ps').textContent=`答對 ${Q.score}`;$('#ok').textContent='下一題';Q.at=Date.now();if(document.activeElement)document.activeElement.blur();
 }
 function finish(){
-  const n=Q.keys.length,w=Q.wrong.slice(),g=Q.g,rt=Q.retest,sc=Q.score,dv=$('#qdeck').value;
-  lastWrong=w;
-  hist.unshift({t:Date.now(),deck:dv==='all'?'彙總':'Day '+dv,mode:Q.mode,n,sc,rt});hist=hist.slice(0,5);
-  try{localStorage.setItem(HK,JSON.stringify(hist))}catch(e){}
+  const n=Q.keys.length,w=Q.wrong.slice(),g=Q.g,rt=Q.retest,sc=Q.score;
+  last={sel:Q.sel,mode:Q.mode,wrong:w};
+  hist.unshift({t:Date.now(),lang:Q.lang,deck:Q.label,mode:Q.mode,n,sc,rt});hist=hist.slice(0,5);sv(HK,hist);
   $('#play').classList.add('hide');$('#setup').classList.add('hide');$('#res').classList.remove('hide');
   $('#rs').textContent=`${rt?'補測':'測驗'}完成：${n} 題答對 ${sc} 題`+(w.length?'':'，全對 🎉');
   $('#wl').innerHTML=w.length?`<div class="msg">答錯的題目（${w.length}）</div><table>`+w.map(k=>`<tr><td>${esc(k)}</td><td>${g.get(k).map(esc).join('、')}</td></tr>`).join('')+'</table>':'';
@@ -223,10 +258,9 @@ function finish(){
   $('#rq').classList.toggle('hide',!w.length);
   Q=null;renderHist();
 }
+$('#start').onclick=()=>start(false);
 $('#rq').onclick=()=>{$('#res').classList.add('hide');start(true)};
 $('#rb').onclick=()=>{$('#res').classList.add('hide');$('#setup').classList.remove('hide')};
-$('#start').onclick=()=>{$('#again').classList.add('hide');start(false)};
-$('#again').onclick=()=>start(true);
 $('#ok').onclick=submit;
 $('#quit').onclick=()=>{if(!Q)return;const n=Q.i+(Q.done?1:0);if(!n){Q=null;$('#play').classList.add('hide');$('#setup').classList.remove('hide');return}Q.keys=Q.keys.slice(0,n);finish()};
 document.addEventListener('keydown',e=>{
@@ -237,7 +271,7 @@ document.addEventListener('keydown',e=>{
   const ins=[...document.querySelectorAll('#ai input')],i=ins.indexOf(a);
   if(i>=0&&i<ins.length-1)ins[i+1].focus();else submit();
 });
-render();renderHist();
+fillAll();renderHist();
 </script>
 </body>
 </html>
