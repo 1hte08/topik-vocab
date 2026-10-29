@@ -56,6 +56,8 @@ th{color:var(--muted);font-weight:500;font-size:13px}
     <label>單字庫（可複選）</label>
     <div class="chips" id="chips"></div>
     <div class="row"><div><label>模式</label><br><select id="qmode" style="width:100%"></select></div></div>
+    <div class="row"><div><label>題目數量（留空＝全部）</label><br><input id="qn" type="number" min="1" placeholder="全部" style="width:100%"></div></div>
+    <div class="msg" id="qavail"></div>
     <div class="row"><button class="p" id="start">開始作答</button></div>
     <div class="msg" id="qmsg"></div>
   </div>
@@ -152,7 +154,10 @@ function chips(){
   [...sel].forEach(d=>{if(!ds.includes(d))sel.delete(d)});
   const all=ds.length>0&&sel.size===ds.length;
   $('#chips').innerHTML=ds.length?`<label class="chip${all?' on':''}"><input type="checkbox" id="call"${all?' checked':''}>彙總（全部 ${LW().length} 字）</label>`+ds.map(d=>{const on=sel.has(d);return `<label class="chip${on?' on':''}"><input type="checkbox" value="${d}"${on?' checked':''}>${gl(d)}（${cnt(d)}）</label>`}).join(''):'<div class="msg">還沒有單字，請先到「單字題庫區」新增或匯入。</div>';
+  updCount();
 }
+function updCount(){const n=gset(LW().filter(w=>sel.has(w.day)),$('#qmode').value||'ko').size;$('#qavail').textContent=n?`目前勾選範圍共 ${n} 題，可輸入要隨機抽幾題`:''}
+$('#qmode').onchange=updCount;
 $('#chips').onchange=e=>{const t=e.target;if(t.id==='call'){sel=t.checked?new Set(grp()):new Set()}else{t.checked?sel.add(+t.value):sel.delete(+t.value)}chips()};
 function renderHist(){$('#hist').innerHTML=hist.length?'<table><tbody>'+hist.map(h=>`<tr><td>${new Date(h.t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td><td>${esc(h.lang)}・${esc(h.deck)}${h.rt?'・補測':''}</td><td>${h.mode==='ko'?'看外語':'看中文'}</td><td>${h.sc}/${h.n}</td></tr>`).join('')+'</tbody></table>':'<div class="msg">還沒有紀錄</div>'}
 
@@ -209,7 +214,9 @@ $('#bf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileRea
 
 /* quiz */
 const norm=s=>s.normalize('NFC').trim().toLowerCase().replace(/\s+/g,'');
-const variants=s=>[s,...s.split(/[、，,；;\/]/)].map(norm).filter(Boolean);
+const parts=s=>s.split(/[、，,；;\/／]/).map(norm).filter(Boolean);
+const variants=s=>[norm(s),...parts(s)].filter(Boolean);
+const matchAns=(v,a)=>{if(variants(a).includes(v))return true;const pv=parts(v),pa=parts(a);return pv.length>1&&pv.every(p=>pa.includes(p))};
 function gset(list,mode){
   const g=new Map(),pk=mode==='ko'?'ko':'zh',ak=mode==='ko'?'zh':'ko';
   list.forEach(w=>{const p=w[pk];if(!g.has(p))g.set(p,[]);const a=g.get(p);if(!a.includes(w[ak]))a.push(w[ak])});
@@ -223,7 +230,8 @@ function start(only){
   if(only)keys=keys.filter(k=>c.wrong.includes(k));
   if(!keys.length){$('#qmsg').textContent='這個單字庫還沒有單字';return}
   const label=c.sel.length===grp().length?'彙總':[...c.sel].sort((a,b)=>a-b).map(gl).join('、');
-  Q={g,mode:c.mode,sel:c.sel,label,lang:S.lang,keys:shuffle(keys),i:0,score:0,wrong:[],done:false,retest:!!only};
+  keys=shuffle(keys);const nq=parseInt($('#qn').value);if(!only&&nq>0)keys=keys.slice(0,nq);
+  Q={g,mode:c.mode,sel:c.sel,label,lang:S.lang,keys,i:0,score:0,wrong:[],done:false,retest:!!only};
   $('#qmsg').textContent='';$('#setup').classList.add('hide');$('#play').classList.remove('hide');show();
 }
 function show(){
@@ -241,7 +249,7 @@ function submit(){
   if(Q.done){Q.i++;return show()}
   const k=Q.keys[Q.i],ans=Q.g.get(k),ins=[...document.querySelectorAll('#ai input')].map(i=>norm(i.value));
   const used=new Set();let hit=0;
-  ins.forEach(v=>{if(!v)return;const j=ans.findIndex((a,x)=>!used.has(x)&&(Q.mode==='ko'?variants(a):[norm(a)]).includes(v));if(j>=0){used.add(j);hit++}});
+  ins.forEach(v=>{if(!v)return;const j=ans.findIndex((a,x)=>!used.has(x)&&matchAns(v,a));if(j>=0){used.add(j);hit++}});
   const ok=hit===ans.length;Q.done=true;
   if(ok)Q.score++;else Q.wrong.push(k);
   $('#fb').innerHTML=`<div class="fb ${ok?'ok':'bad'}">${ok?'✔ 答對了！':'✘ 答錯了'}　答案：${ans.map(esc).join('、')}</div>`;
